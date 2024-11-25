@@ -12,12 +12,12 @@ import java.time.LocalDateTime
 sealed class ApiException(message: String) : Throwable(message) {
     data object NotAuthorized : ApiException("Not authorized")
     data object NetworkException : ApiException("Not connected")
-    data object UnknownException: ApiException("Unknown exception")
+    data object UnknownException : ApiException("Unknown exception")
 }
 
 class ErrorLogger<E : Throwable> {
 
-    val errors = mutableListOf<Pair<LocalDateTime, E>>()
+    private val errors = mutableListOf<Pair<LocalDateTime, E>>()
 
     fun log(response: NetworkResponse<*, E>) {
         if (response is Failure) {
@@ -30,6 +30,9 @@ class ErrorLogger<E : Throwable> {
             println("Error at $date: ${error.message}")
         }
     }
+
+    fun dump(): List<Pair<LocalDateTime, E>> = errors
+
 }
 
 fun processThrowables(logger: ErrorLogger<Throwable>) {
@@ -42,7 +45,7 @@ fun processThrowables(logger: ErrorLogger<Throwable>) {
     logger.dumpLog()
 }
 
-fun processApiErrors(apiExceptionLogger: ErrorLogger<ApiException>) {
+fun processApiErrors(apiExceptionLogger: ErrorLogger<in ApiException>) {
     apiExceptionLogger.log(Success("Success"))
     Thread.sleep(100)
     apiExceptionLogger.log(Success(Circle))
@@ -60,5 +63,7 @@ fun main() {
 
     println("Processing Api:")
     processApiErrors(logger)
+
+    println("Dump: ${logger.dump()}")
 }
 
